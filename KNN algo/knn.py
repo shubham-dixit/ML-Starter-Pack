@@ -1,113 +1,63 @@
-import pandas as pd
+# K-Nearest Neighbours (K-NN)
+# Importing the libraries
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import axes3d
-import random
-from scipy.spatial import distance
+import pandas as pd
 
-def error(r,l):
-    e=0.0
-    for i in range(len(inputx)):
-        e+=distance.euclidean(inputx[i],r[l[i]])
+# Importing the dataset
+dataset = pd.read_csv('/home/arindam/Desktop/KNN algo/Iris.csv')
+X = dataset.iloc[:,["SepalLength","SepalWidth","PetalLength","PetalWidth"]].values
+y = dataset.iloc[:,("Species")].values
 
-    return(e)
-    
+# Splitting the dataset into the Training set and Test set
+from sklearn.cross_validation import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, random_state = 0)
 
+# Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc_X = StandardScaler()
+X_train = sc_X.fit_transform(X_train)
+X_test = sc_X.transform(X_test)
 
-df=pd.read_csv("/home/arindam/Desktop/KNN algo/Iris.csv")
+#Fitting KNN to training set
+from sklearn.neighbors import KNeighborsClassifier
+classifier = KNeighborsClassifier(n_neighbors = 5, metric= 'minkowski', p =2)
+classifier.fit(X_train, y_train)
+#Predicting the test results
+y_pred = classifier.predict(X_test)
 
-inputx=df.loc[:,["SepalLength","SepalWidth","PetalLength","PetalWidth"]].astype(np.float32).as_matrix()
-inputy=df.loc[:,("Species")].as_matrix()
+#Making the confusion matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)
 
-for i in range(len(inputy)):
-    if inputy[i]=="Iris-setosa":
-        inputy[i]=0
-    elif inputy[i]=="Iris-versicolor":
-        inputy[i]=1
-    else:
-        inputy[i]=2
+#Visualising the Training Set results
+from matplotlib.colors import ListedColormap
+X_set, y_set = X_train, y_train 
+X1, X2= np.meshgrid(np.arange(start= X_set[:, 0].min()-1, stop= X_set[:,0].max()+1, step= 0.01),
+                    np.arange(start= X_set[:,1].min()-1, stop= X_set[:,1].max()+1, step= 0.01))
+plt.contourf(X1, X2, classifier.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape), alpha=0.75, cmap=ListedColormap(('red','green')))
+plt.xlim(X1.min(), X1.max())
+plt.ylim(X2.min(), X2.max())
+for i,j in enumerate(np.unique(y_set)):
+    plt.scatter(X_set[y_set==j, 0],X_set[y_set==j, 1], c= ListedColormap(('red','green'))(i),label=j)
+plt.title('Classifier')
+plt.xlabel('Age')
+plt.ylabel('Salary')
+plt.legend()
+plt.show()    
 
-min_mat=[]
-min_err=[]
-
-for n in range(2,9):
-    rand=[]
-    print("val n = ",n)
-    mat=[]
-    minerr=0
-    for r in range(10):
-        rand=[]
-        rd=random.sample(range(0,150),n)
-        for j in rd:
-            rand.append(inputx[j])
-
-        for nt in range(100):
-            label=[]
-            for i in inputx:
-                dis=[]
-                for j in range(n):
-                    dis.append(distance.euclidean(i,rand[j]))
-                label.append(dis.index(min(dis)))
-
-            for k in range(n):
-                emp=[]
-                for l in range(len(inputx)):
-                    if label[l]==k:
-                        emp.append(inputx[l])
-                emp=np.array(emp)
-                centroid=emp.mean(0)
-                rand[k]=centroid
-        
-        #print("rand = ",rand)
-
-        label=[]
-        for i in inputx:
-            dis=[]
-            for j in range(n):
-                dis.append(distance.euclidean(i,rand[j]))
-            label.append(dis.index(min(dis)))
-
-        print(error(rand,label))    
-        if r==0:        
-            mat.append(rand)
-            mat.append(label)
-            minerr=error(rand,label)
-        else:
-            if error(rand,label)<minerr:
-                mat=[]
-                mat.append(rand)
-                mat.append(label)
-                minerr=error(rand,label)
-   
-    print("Minimum = ",minerr)
-    print("Mat = ",mat)
-    min_err.append(minerr)
-    temp=[]
-    temp.append(mat[0])
-    temp.append(mat[1]) 
-    min_mat.append(temp)   
-'''
-    if n==2:        
-        min_mat.append(mat[0])
-        min_mat.append(mat[1])
-        minerr=error(mat[0],mat[1])
-    else:
-        if error(rand,label)<minerr:
-            min_mat=[]
-            min_mat.append(mat[0])
-            min_matmat.append(mat[1])
-            minerr=error(mat[0],mat[1])
-'''
-   
-print("Minimum = ",minerr)
-print("Min_mat = ",min_mat)
-print("Min_err = ",min_err)
-
-plt.scatter(range(2,len(min_err)+2),min_err, color="blue", label="Iris")
-
-plt.show()
-            
-            
-           
-
-
+#Visualising the Test Set results
+from matplotlib.colors import ListedColormap
+X_set, y_set = X_test, y_test 
+X1, X2= np.meshgrid(np.arange(start= X_set[:, 0].min()-1, stop= X_set[:,0].max()+1, step= 0.01),
+                    np.arange(start= X_set[:,1].min()-1, stop= X_set[:,1].max()+1, step= 0.01))
+plt.contourf(X1, X2, classifier.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape), alpha=0.75, cmap=ListedColormap(('red','green')))
+plt.xlim(X1.min(), X1.max())
+plt.ylim(X2.min(), X2.max())
+for i,j in enumerate(np.unique(y_set)):
+    plt.scatter(X_set[y_set==j, 0],X_set[y_set==j, 1], c= ListedColormap(('red','green'))(i),label=j)
+plt.title('Classifier')
+plt.xlabel('Age')
+plt.ylabel('Salary')
+plt.legend()
+plt.show()   
